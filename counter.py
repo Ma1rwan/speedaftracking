@@ -27,10 +27,10 @@ query_results = ref.get()
 
 product_names = []
 phone_numbers = []
-
-
+track_numbers = []
+locations = []
 if query_results:
-    in_transit = 1
+    in_transit = 0
     in_local_country = 0
     out_for_delivery = 0
     to_ship = 0
@@ -38,12 +38,16 @@ if query_results:
     delivered_count = 0
     for result in query_results:
         if result.get('delivered', '') == False:
-            if result.get('location', '') == "in transit":
+            if "in transit" in result.get('location', '') :
                 in_transit += 1
             elif "DC-CASA" in result.get('location', '') or "Hub Marrakech" in result.get('location', ''):
                 in_local_country += 1
             elif "scanned for delivery" in result.get('location', ''):
                 out_for_delivery += 1
+                product_names.append(result.get('product_name', ''))
+                phone_numbers.append(result.get('phone_number', ''))
+                track_numbers.append(result.get('track_number', ''))
+                locations.append(result.get('location', ''))
         elif result.get('delivered', '') == True:
             delivered_count += 1
         else:
@@ -63,27 +67,13 @@ if query_results:
         file.write(f"Delivered: {delivered_count}\n")
 
     output_file = onedrive_dir + r"\سطح المكتب\livreur.txt"
-    if out_for_delivery > 0:
-        with open(output_file, 'w', encoding='utf-8') as file:
-            out_for_delivery = 0
-            for key, file_path in file_dict.items():
-                fourth_line = get_fourth_line(file_path)
-                if fourth_line is not None and "delivery courier" in fourth_line:
-                    out_for_delivery += 1
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        lines = f.readlines()
-                        if len(lines) >= 3:
-                            third_line = lines[2].strip()
-                    phone_number = ""
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        first_line = f.readline().strip()
-                        if "|" in first_line:
-                            phone_number = first_line.split("|")[1].strip()
-                        else:
-                            phone_number = first_line.strip()
-                    last_index = fourth_line.rfind("delivery courier is")
-                    if last_index != -1:
-                        last_index = last_index + len("delivery courier is") + 1
-                        file.write(f"{key} | {phone_number} | {third_line} | {fourth_line[last_index:].strip()}\n")
-            if out_for_delivery == 0:
-                file.write("NOTHING HERE!!!!!!")
+    with open(output_file, 'w', encoding='utf-8') as file2:
+        if out_for_delivery > 0:
+            for index, product_name in enumerate(product_names):
+
+                last_index = locations[index].rfind("delivery courier is")
+                if last_index != -1:
+                    last_index = last_index + len("delivery courier is") + 1
+                    file2.write(f"{product_name} | {phone_numbers[index]} | {track_numbers[index]} | {locations[index][last_index:].strip()}\n")
+        else:
+            file2.write("NOTHING HERE!!!!!!")
