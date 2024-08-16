@@ -67,11 +67,14 @@ def send_email(product, status):
     print("email has been sent")
 
 def update_current_location(product_id, new_location, status):
+    product_id = str(product_id)
     try:
+
         # Update only the 'current_location' field
         ref.child(product_id).update({"location": new_location})
         if status == "Delivered":
             ref.child(product_id).update({"delivered": True})
+            print(product_id)
     except Exception as e:
         print(f"Error updating current location for product {product_id}: {e}")
 if query_results:
@@ -82,11 +85,13 @@ if query_results:
             TN_in_transit.append(result.get('track_number', ''))
             locations.append(result.get('location', ''))
             PN_in_transit.append(result.get('product_name', ''))
-            print(product_ID)
+            print(result.get('location', ''))
+
         product_ID += 1
 
 else:
     print("No products found that meet the criteria.")
+print(PN_in_transit)
 print(PN_in_transit)
 
 
@@ -132,17 +137,17 @@ try:
             check_element = ''.join(char for char in element if char not in characters_to_remove)
             print(element)
             if "Parcel delivered" in check_element:
-                update_current_location(productID, check_element, "Delivered")
-                send_email(PN_in_transit[index], check_element)
-            elif check_element != locations[index]:
+                update_current_location(productID, element, "Delivered")
+                send_email(PN_in_transit[index], element)
+            elif element != locations[index]:
                 # List of keywords to check for
                 keywords = ["DC-CASA", "Marrakech", "scanned for delivery", "Issue Parcel"]
 
                 check_element2 = check_element.lower()
                 for keyword in keywords:
                     if keyword.lower() in check_element2:
-                        update_current_location(productID, check_element, "shipped")
-                        send_email(PN_in_transit[index], check_element)
+                        update_current_location(productID, element, "shipped")
+                        send_email(PN_in_transit[index], element)
                         break  # Stop further checks once a keyword is found
 
             time.sleep(5)  # Sleep for 10 seconds, adjust as needed
